@@ -3,9 +3,9 @@
 ##-----------------------------------------------------------------------------
 from cv2 import imread, imwrite
 
-from fnc.segment import segment
-from fnc.normalize import normalize
-from fnc.encode import encode
+from functions.segment import segment
+from functions.normalize import normalize
+from functions.encode import encode
 
 
 ##-----------------------------------------------------------------------------
@@ -16,8 +16,8 @@ from fnc.encode import encode
 eyelashes_thres = 80
 
 # Normalisation parameters
-radial_res = 20
-angular_res = 240
+radial_res = 64
+angular_res = 256
 
 # Feature encoding parameters
 minWaveLength = 18

@@ -1,4 +1,13 @@
 # Iris recognition with CNN for feature extraction
 
-TODO:
+### TODO:
 - cite the authors of the original pipeline
+- try normalizing pictures with the mean and std of the CASIA DB, not imagenet params
+
+
+### Casia-Iris-Interval structure
+The images of CASIA-Iris-Interval are stored as:  
+$root path$/CASIA-Iris-Interval/YYY/E/S1YYYENN.jpg  
+YYY: the unique identifier of the subject in the subset  
+E: ‘L’ denotes left eye and ‘R’ denotes right eye  
+NN: the index of the image in the class   

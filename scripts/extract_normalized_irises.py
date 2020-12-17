@@ -9,25 +9,20 @@ from functions.normalize import normalize
 
 
 # Segmentation parameters
-eyelashes_thres = 80
+eyelashes_thresh = 80
 
 # Normalisation parameters
-radial_res = 20
-angular_res = 240
+radial_res = 64
+angular_res = 256
 
-# Feature encoding parameters
-minWaveLength = 18
-mult = 1
-sigmaOnf = 0.5
-
-iris_folder = "../data/CASIA1"
-normalized_folder = "../data/CASIA1_normalized/"
+iris_folder = "../data/CASIA-Iris-Interval"
+normalized_folder = "../data/CASIA_interval_normalized"
 
 
 def pool_func(path_tuple):
     filename, orig_folder, dest_folder = path_tuple
     im = imread(os.path.join(orig_folder, filename), 0)
-    ciriris, cirpupil, imwithnoise = segment(im, eyelashes_thres, False)
+    ciriris, cirpupil, imwithnoise = segment(im, eyelashes_thresh, False)
 
     # Perform normalization
     polar_iris, polar_mask = normalize(imwithnoise, ciriris[1], ciriris[0], ciriris[2],
@@ -39,13 +34,10 @@ def pool_func(path_tuple):
 
 if __name__ == '__main__':
     files = []
-
-    for folder in os.listdir(iris_folder):
-        pathlib.Path(normalized_folder + folder).mkdir(parents=True, exist_ok=True)
-        for file in os.listdir(os.path.join(iris_folder, folder)):
-            orig_folder = os.path.join(iris_folder, folder)
-            dest_folder = os.path.join(normalized_folder, folder)
-            files.append((file, orig_folder, dest_folder))
+    for dirpath, dirnames, filenames in os.walk(iris_folder):
+        new_dir = dirpath.replace(iris_folder, normalized_folder)
+        pathlib.Path(new_dir).mkdir(parents=True, exist_ok=True)
+        files += [(file, dirpath, new_dir) for file in filenames]
 
     print("Started extracting normalized iris regions...")
     pools = Pool(processes=8)
