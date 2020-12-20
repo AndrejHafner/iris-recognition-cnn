@@ -5,7 +5,7 @@ from cv2 import imread, imwrite
 
 from functions.segment import segment
 from functions.normalize import normalize
-from functions.encode import encode
+from daugmans_pipeline.encode import encode
 
 
 ##-----------------------------------------------------------------------------

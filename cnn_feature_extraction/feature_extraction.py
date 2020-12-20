@@ -1,60 +1,52 @@
-##-----------------------------------------------------------------------------
-##  Import
-##-----------------------------------------------------------------------------
-from cv2 import imread, imwrite
+import cv2
+import numpy as np
+import torch
+import timm
 
-from functions.segment import segment
-from functions.normalize import normalize
-from functions.encode import encode
+class Normalize(object):
+    """Normalize a tensor image with mean and standard deviation.
+    Args:
+        mean (tuple): means for each channel.
+        std (tuple): standard deviations for each channel.
+    """
+    def __init__(self, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)):
+        self.mean = mean
+        self.std = std
+
+    def __call__(self, img):
+        img = np.array(img).astype(np.float32)
+        img -= self.mean
+        img /= self.std
+        return img
+
+def mask_out_region(filename, image):
+    norm_mask = (cv2.imread(filename.replace(".png","_mask.png"), cv2.IMREAD_GRAYSCALE) / 255).astype(bool)
+    image[norm_mask] = 0
+    return image
+
+def convert_img_to_tensor(mat, cuda = True):
+    # mat = np.array(mat)
+    mat = Normalize()(mat) # Important!
+    height, width, channels = mat.shape
+    norm_img_reshaped = mat.reshape((channels, width, height)).astype(np.float32)
+    img_tensor = torch.from_numpy(norm_img_reshaped)
+    if cuda:
+        return img_tensor[np.newaxis, :].cuda()
+    return img_tensor[np.newaxis, :]
+
+def convert_norm_iris_to_tensor(mat):
+    # mat = np.array(mat)
+    norm_img_stacked = np.stack((mat,)*3, axis=-1)
+    height, width, channels = norm_img_stacked.shape
+    norm_img_reshaped = norm_img_stacked.reshape(channels, width, height).astype(np.float32)
+    img_tensor = torch.from_numpy(norm_img_reshaped)
+    return img_tensor[np.newaxis, :].cuda()
 
 
-##-----------------------------------------------------------------------------
-##  Parameters for extracting feature
-##	(The following parameters are default for CASIA1 dataset)
-##-----------------------------------------------------------------------------
-# Segmentation parameters
-eyelashes_thres = 80
-
-# Normalisation parameters
-radial_res = 20
-angular_res = 240
-
-# Feature encoding parameters
-minWaveLength = 18
-mult = 1
-sigmaOnf = 0.5
-
-
-##-----------------------------------------------------------------------------
-##  Function
-##-----------------------------------------------------------------------------
-def extractFeatureCNN(im_filename, eyelashes_thres=80, use_multiprocess=True):
-	"""
-	Description:
-		Extract features from an iris image
-
-	Input:
-		im_filename			- The input iris image
-		use_multiprocess	- Use multiprocess to run
-
-	Output:
-		template			- The extracted template
-		mask				- The extracted mask
-		im_filename			- The input iris image
-	"""
-	# Perform segmentation
-	im = imread(im_filename, 0)
-	ciriris, cirpupil, imwithnoise = segment(im, eyelashes_thres, use_multiprocess)
-
-	# Perform normalization
-	return normalize(imwithnoise, ciriris[1], ciriris[0], ciriris[2],
-										 cirpupil[1], cirpupil[0], cirpupil[2],
-										 radial_res, angular_res)
-
-	# imwrite("test.png", polar_array * 255)
-	# imwrite("test_noise.png", noise_array * 255)
-	# # Perform feature encoding
-	# template, mask = encode(polar_array, noise_array, minWaveLength, mult, sigmaOnf)
-	#
-	# # Return
-	# return template, mask, im_filename
+@torch.no_grad()
+def extract_features_CNN(filename, model, cuda = True):
+    norm_img = cv2.imread(filename) / 255
+    norm_img_masked = mask_out_region(filename, norm_img)
+    img_tensor = convert_img_to_tensor(norm_img_masked, cuda = cuda)
+    features =  model.forward_features(img_tensor).flatten().cpu()
+    return features

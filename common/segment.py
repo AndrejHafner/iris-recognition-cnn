@@ -2,8 +2,8 @@
 ##  Import
 ##-----------------------------------------------------------------------------
 import numpy as np
-from functions.boundary import searchInnerBound, searchOuterBound
-from functions.line import findline, linecoords
+from common.boundary import searchInnerBound, searchOuterBound
+from common.line import findline, linecoords
 import multiprocessing as mp
 
 

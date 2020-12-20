@@ -4,8 +4,8 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 from cv2 import imread, imwrite
-from functions.segment import segment
-from functions.normalize import normalize
+from common.segment import segment
+from common.normalize import normalize
 
 
 # Segmentation parameters
@@ -15,8 +15,8 @@ eyelashes_thresh = 80
 radial_res = 64
 angular_res = 256
 
-iris_folder = "../data/CASIA-Iris-Interval"
-normalized_folder = "../data/CASIA_interval_normalized"
+iris_folder = "../data/CASIA-Iris-Thousand"
+normalized_folder = "../data/CASIA_iris_thousand_normalized"
 
 
 def pool_func(path_tuple):
