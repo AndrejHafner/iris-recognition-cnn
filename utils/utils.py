@@ -17,6 +17,22 @@ def parse_casia_interval_filename(filename):
     identifier = int(filename[-6:-3])
     return identifier, side, index
 
+def parse_casia_thousand_filename(filename):
+    """
+
+    :param filename: Filename of the Casia-Iris-Interval image
+    :return:
+    identifier -> unique ID of the subject
+    side -> L or R for left or right eye - unique per person
+    index -> index of the image for this class - there are multiple pictures per eye
+    """
+    filename = filename.replace(".jpg", "")
+    index = int(filename[-2:])
+    side = filename[-3:-2]
+    identifier = int(filename[-6:-3])
+    return identifier, side, index
+
+
 
 def get_files_walk(dir):
     """
@@ -29,14 +45,14 @@ def get_files_walk(dir):
             yield os.path.join(dirpath, file)
 
 
-def casia_interval_enrollment_split(dir, split = 0.7, random_seed = 42):
+def casia_enrollment_split(dir, parse_func=parse_casia_interval_filename, split = 0.7, random_seed = 42):
     identities = defaultdict(list)
     enrollment = defaultdict(list)
     test = defaultdict(list)
 
     for file in get_files_walk(dir):
         if "_mask" in file: continue
-        identifier, side, index = parse_casia_interval_filename(file)
+        identifier, side, index = parse_func(file)
         identities[(identifier, side)].append(file)
 
     random.seed(random_seed)

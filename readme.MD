@@ -11,3 +11,11 @@ $root path$/CASIA-Iris-Interval/YYY/E/S1YYYENN.jpg
 YYY: the unique identifier of the subject in the subset  
 E: ‘L’ denotes left eye and ‘R’ denotes right eye  
 NN: the index of the image in the class   
+
+
+### Casia-Iris-Thousand
+- 25 non-normalized in train images
+
+### Credits
+https://github.com/Linchunhui/Iris_Recognition  
+https://github.com/ngoclamvt123/usit-v2.2.0
