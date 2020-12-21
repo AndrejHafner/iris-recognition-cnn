@@ -11,7 +11,7 @@ def parse_casia_interval_filename(filename):
     side -> L or R for left or right eye - unique per person
     index -> index of the image for this class - there are multiple pictures per eye
     """
-    filename = filename.replace(".png", "")
+    filename = filename.replace(".png", "").replace(".jpg", "")
     index = int(filename[-2:])
     side = filename[-3:-2]
     identifier = int(filename[-6:-3])
@@ -26,7 +26,7 @@ def parse_casia_thousand_filename(filename):
     side -> L or R for left or right eye - unique per person
     index -> index of the image for this class - there are multiple pictures per eye
     """
-    filename = filename.replace(".jpg", "")
+    filename = filename.replace(".jpg", "").replace(".png", "")
     index = int(filename[-2:])
     side = filename[-3:-2]
     identifier = int(filename[-6:-3])
@@ -67,3 +67,18 @@ def casia_enrollment_split(dir, parse_func=parse_casia_interval_filename, split 
 
     return enrollment, test
 
+def load_train_test(dir, filename_parse_func=parse_casia_thousand_filename):
+    train_files = [os.path.join(dir, "train", file) for file in os.listdir(os.path.join(dir, "train")) if "_mask" not in file]
+    test_files = [os.path.join(dir, "test", file) for file in os.listdir(os.path.join(dir, "test")) if "_mask" not in file]
+
+    train_dict = defaultdict(list)
+    for file in train_files:
+        identifier, side, _ = filename_parse_func(file)
+        train_dict[(identifier, side)].append(file)
+
+    test_dict = defaultdict(list)
+    for file in test_files:
+        identifier, side, _ = filename_parse_func(file)
+        test_dict[(identifier, side)].append(file)
+
+    return train_dict, test_dict

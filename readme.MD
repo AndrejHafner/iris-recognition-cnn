@@ -14,7 +14,8 @@ NN: the index of the image in the class
 
 
 ### Casia-Iris-Thousand
-- 25 non-normalized in train images
+- 25 non-normalized in train images and 9 in test - with enhancement
+
 
 ### Credits
 https://github.com/Linchunhui/Iris_Recognition  

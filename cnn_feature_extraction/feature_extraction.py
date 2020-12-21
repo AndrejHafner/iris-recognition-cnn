@@ -49,4 +49,6 @@ def extract_features_CNN(filename, model, cuda = True):
     norm_img_masked = mask_out_region(filename, norm_img)
     img_tensor = convert_img_to_tensor(norm_img_masked, cuda = cuda)
     features =  model.forward_features(img_tensor).flatten().cpu()
+    # features =  model.forward_features(img_tensor)
+    # features = model.global_pool(features).flatten().cpu()
     return features
