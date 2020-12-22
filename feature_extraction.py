@@ -20,7 +20,8 @@ class Normalize(object):
         return img
 
 def mask_out_region(filename, image):
-    norm_mask = (cv2.imread(filename.replace(".png","_mask.png"), cv2.IMREAD_GRAYSCALE) / 255).astype(bool)
+    # ~ for negation, because 0 is mask, 255 is non-mask
+    norm_mask = ~(cv2.imread(filename.replace(".png","_mask.png"), cv2.IMREAD_GRAYSCALE) / 255).astype(bool)
     image[norm_mask] = 0
     return image
 
@@ -44,11 +45,9 @@ def convert_norm_iris_to_tensor(mat):
 
 
 @torch.no_grad()
-def extract_features_CNN(filename, model, cuda = True):
+def extract_features_CNN(filename, extract_func, cuda = True, global_pool = False):
     norm_img = cv2.imread(filename) / 255
-    norm_img_masked = mask_out_region(filename, norm_img)
-    img_tensor = convert_img_to_tensor(norm_img_masked, cuda = cuda)
-    features =  model.forward_features(img_tensor).flatten().cpu()
-    # features =  model.forward_features(img_tensor)
-    # features = model.global_pool(features).flatten().cpu()
-    return features
+    # norm_img_masked = mask_out_region(filename, norm_img)
+    img_tensor = convert_img_to_tensor(norm_img, cuda = cuda)
+
+    return extract_func(img_tensor).flatten().cpu()

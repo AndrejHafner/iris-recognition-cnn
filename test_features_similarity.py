@@ -1,14 +1,11 @@
-import timm
 import pickle
 
 from sklearn.preprocessing import StandardScaler
 
-from cnn_feature_extraction.feature_extraction import extract_features_CNN
 from tqdm import tqdm
 from numpy import dot
 from numpy.linalg import norm
 from ast import literal_eval as make_tuple
-from sklearn.decomposition import PCA
 
 
 def compute_cosine_similarity(identity_features, enrolled_features):

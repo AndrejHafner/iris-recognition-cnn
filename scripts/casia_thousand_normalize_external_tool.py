@@ -8,10 +8,10 @@ from tqdm import tqdm
 from utils.utils import casia_enrollment_split, parse_casia_thousand_filename
 
 dir = "../data/CASIA-Iris-Thousand"
-target_dir = "../data/CASIA_thousand_norm_512_64_e"
+target_dir = "../data/CASIA_thousand_norm_512_64"
 width = 512
 height = 64
-enhancement = True
+enhancement = False
 quiet_mode = True
 
 def pool_func_train(file_path):
