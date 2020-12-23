@@ -73,11 +73,13 @@ parser.add_argument('--image_size', default=224, type=int,
                     help='image size')
 parser.add_argument('--advprop', default=False, action='store_true',
                     help='use advprop or not')
+parser.add_argument('-n_classes',default=2000, type=int, help='number of classses')
 parser.add_argument('--multiprocessing-distributed', action='store_true',
                     help='Use multi-processing distributed training to launch '
                          'N processes per node, which has N GPUs. This is the '
                          'fastest way to use PyTorch for either single node or '
                          'multi node data parallel training')
+
 
 best_acc1 = 0
 
@@ -136,16 +138,17 @@ def main_worker(gpu, ngpus_per_node, args):
     # create model
     if 'efficientnet' in args.arch:  # NEW
         if args.pretrained:
-            model = EfficientNet.from_pretrained(args.arch, advprop=args.advprop)
-            print("=> using pre-trained model '{}'".format(args.arch))
+            model = EfficientNet.from_pretrained(args.arch, advprop=args.advprop, num_classes=args.n_classes)
+            print("=> using pre-trained model '{}', n_classes {}".format(args.arch, args.n_classes))
         else:
             print("=> creating model '{}'".format(args.arch))
-            model = EfficientNet.from_name(args.arch)
+            model = EfficientNet.from_name(args.arch, num_classes=args.n_classes)
 
     else:
         if args.pretrained:
             print("=> using pre-trained model '{}'".format(args.arch))
-            model = models.__dict__[args.arch](pretrained=True)
+            model = models.__dict__[args.arch](pretrained=True, num_classes=args.n_classes)
+            e = 0
         else:
             print("=> creating model '{}'".format(args.arch))
             model = models.__dict__[args.arch]()
@@ -207,6 +210,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # Data loading code
     traindir = os.path.join(args.data, 'train')
+    print(traindir)
     valdir = os.path.join(args.data, 'val')
     if args.advprop:
         normalize = transforms.Lambda(lambda img: img * 2.0 - 1.0)
@@ -243,6 +247,7 @@ def main_worker(gpu, ngpus_per_node, args):
         transforms.ToTensor(),
         normalize,
     ])
+
     print('Using image size', image_size)
 
     val_loader = torch.utils.data.DataLoader(
@@ -434,7 +439,7 @@ def accuracy(output, target, topk=(1,)):
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

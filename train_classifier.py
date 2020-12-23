@@ -25,6 +25,7 @@ if __name__ == '__main__':
     model = EfficientNet.from_pretrained('efficientnet-b3')
     model.cuda()
 
+    #0.9365609348914858
     model_extract_func = model.extract_features_conv_stem
 
     # model = timm.create_model(model_name, pretrained=True)
@@ -35,7 +36,7 @@ if __name__ == '__main__':
 
     train_inter = {}
     test_inter = {}
-    classes = 100
+    classes = 200
     for key in list(train.keys())[:classes]:
         train_inter[key] = train[key]
         test_inter[key] = test[key]
