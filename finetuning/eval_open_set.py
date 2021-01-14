@@ -1,3 +1,5 @@
+from collections import Counter
+
 import torch
 import numpy as np
 
@@ -47,7 +49,6 @@ def get_model(model_name, checkpoint_path, num_classes=1500):
 def get_dataloader(data_path, input_size, batch_size=32):
 
     transform = transforms.Compose([
-        # transforms.Pad((0, (192) // 2)),
         transforms.Resize(input_size),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
@@ -83,7 +84,8 @@ def enroll_identities(feature_extract_func, dataloader, device):
 
 def evaluate(enrolled, feature_extract_func, dataloader, device):
     total = 0
-    correct = 0
+    rank_1_correct = 0
+    rank_5_correct = 0
     with torch.no_grad():
         for input, labels in dataloader:
             inputs = input.to(device)
@@ -97,14 +99,24 @@ def evaluate(enrolled, feature_extract_func, dataloader, device):
                     cosine_similarities = np.matmul(enrolled[key], pred_norm)
                     similarities_id[key] = np.max(cosine_similarities)
 
+                # Check for rank 1 accuracy
                 recognized_key = max(similarities_id, key=similarities_id.get)
-                total += 1
                 if label == recognized_key:
-                    correct += 1
+                    rank_1_correct += 1
+
+                # Check for rank 5 accuracy
+                top_5_labels = list(dict(Counter(similarities_id).most_common(5)).keys())
+                if label in top_5_labels:
+                    rank_5_correct += 1
+
+                total += 1
+
                 # print(f"Ground truth label: {label}, prediction: {recognized_key}")
 
-    print(f"Accuracy: {correct / total}")
-    return correct / total
+    rank_1_accuracy = rank_1_correct / total
+    rank_5_accuracy = rank_5_correct / total
+    print(f"Rank 1 accuracy: {rank_1_accuracy}, rank 5 accuracy: {rank_5_accuracy}")
+    return rank_1_accuracy, rank_5_accuracy
 
 if __name__ == '__main__':
 

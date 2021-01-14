@@ -3,7 +3,6 @@ from collections import defaultdict
 
 import torch
 import numpy as np
-import os
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets.folder import default_loader
@@ -83,7 +82,8 @@ if __name__ == '__main__':
     folds = 5
 
     test_images_cnt = int(images_per_identity / folds)
-    accuracies = []
+    rank_1_accuracies = []
+    rank_5_accuracies = []
 
     print(f"Starting cross validation, folds: {folds}")
     for fold in range(folds):
@@ -103,7 +103,8 @@ if __name__ == '__main__':
         cv_test_dataloader = get_dataloader(cv_test, input_size, batch_size=batch_size)
 
         enrolled = enroll_identities(model.feature_extract_avg_pool, cv_enrollment_dataloader, device)
-        accuracy = evaluate(enrolled, model.feature_extract_avg_pool, cv_test_dataloader, device)
-        accuracies.append(accuracy)
+        rank_1_acc, rank_5_acc = evaluate(enrolled, model.feature_extract_avg_pool, cv_test_dataloader, device)
+        rank_1_accuracies.append(rank_1_acc)
+        rank_5_accuracies.append(rank_5_acc)
 
-    print(f"mean CV accuracy: {np.mean(accuracies)}")
+    print(f"mean CV rank 1 accuracy: {np.mean(rank_1_accuracies)}, mean CV rank 5 accuracy: {np.mean(rank_5_accuracies)}")
