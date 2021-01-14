@@ -65,12 +65,12 @@ if __name__ == '__main__':
 
 
     print("Loading model...")
-    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    # model_name = "densenet201"
-    # test_data_path = "./CASIA_thousand_norm_256_64_e_nn_stacked/test"
+    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    model_name = "densenet201"
 
-    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
-    model_name = "resnet101"
+    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    # model_name = "resnet101"
+
     enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
     test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
     batch_size = 128
@@ -104,28 +104,30 @@ if __name__ == '__main__':
             for i in unique_labels:
                 user_features = predictions[labels == i,:]
                 if i in enrolled:
-                    enrolled[i] = np.vstack((enrolled[i], normalize(user_features, axis=0, norm='l2')))
+                    enrolled[i] = np.vstack((enrolled[i], normalize(user_features, axis=1, norm='l2')))
                 else:
-                    enrolled[i] = normalize(user_features, axis=0, norm='l2')
-
+                    enrolled[i] = normalize(user_features, axis=1, norm='l2')
     print("Recognizing...")
 
+    total = 0
+    correct = 0
     with torch.no_grad():
         for input, labels in test_dataloader:
             inputs = input.to(device)
             labels = labels.cpu().detach().numpy()
             predictions = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
             for idx, label in enumerate(labels):
-                prediction = predictions[idx,:].reshape(1,-1)
+                pred = predictions[idx,:].reshape(-1,1)
+                pred_norm = normalize(pred, axis=0, norm="l2")
                 similarities_id = {}
                 for key in enrolled.keys():
-                    similarities = []
-                    for entry in enrolled[key]:
-                        entry = entry.reshape(1,-1)
-                        similarities.append(cosine_similarity(prediction, entry))
-                    similarities_id[key] = max(similarities)[0]
+                    cosine_similarities = np.matmul(enrolled[key], pred_norm)
+                    similarities_id[key] = np.max(cosine_similarities)
 
                 recognized_key = max(similarities_id, key=similarities_id.get)
+                total += 1
+                if label == recognized_key:
+                    correct += 1
                 print(f"Ground truth label: {label}, prediction: {recognized_key}")
-            break
 
+    print(f"Accuracy: {correct / total}")
