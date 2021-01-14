@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets.folder import default_loader
 
 from finetuning.eval_open_set import get_model, enroll_identities, evaluate
-from torchvision import datasets, transforms
+from torchvision import transforms
 
 from utils.utils import get_files_walk, parse_casia_thousand_filename
 
@@ -47,39 +47,18 @@ def get_dataloader(identities, input_size, batch_size=32):
     dataset = IrisDataset(identities, transform)
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-if __name__ == '__main__':
-
-
-    print("Loading model...")
-    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    model_name = "densenet201"
-
-    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
-    # model_name = "resnet101"
-
-    enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
-    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
-    batch_size = 196
-
-
-    model, input_size = get_model(model_name, checkpoint_path)
-
-    device = torch.device('cuda')
-    model.to(device)
-    model.eval()
-
-
+def cross_validate(data_path, feature_extract_func, folds=5, random_seed=42):
     identities = defaultdict(list)
-    for file in get_files_walk("./CASIA_thousand_norm_256_64_e_nn_open_set_stacked"):
+    for file in get_files_walk(data_path):
         identifier, side, index = parse_casia_thousand_filename(file)
         identities[(identifier, side)].append(file)
 
+    random.seed(random_seed)
     # Shuffle the paths
     for key in identities.keys():
         random.shuffle(identities[key])
 
     images_per_identity = 10
-    folds = 5
 
     test_images_cnt = int(images_per_identity / folds)
     rank_1_accuracies = []
@@ -87,7 +66,7 @@ if __name__ == '__main__':
 
     print(f"Starting cross validation, folds: {folds}")
     for fold in range(folds):
-        print(f"CV - fold {fold+1}/{folds}")
+        print(f"CV - fold {fold + 1}/{folds}")
         # Split into an enrollment and test set
         cv_enrolled = {}
         cv_test = {}
@@ -102,9 +81,34 @@ if __name__ == '__main__':
         cv_enrollment_dataloader = get_dataloader(cv_enrolled, input_size, batch_size=batch_size)
         cv_test_dataloader = get_dataloader(cv_test, input_size, batch_size=batch_size)
 
-        enrolled = enroll_identities(model.feature_extract_avg_pool, cv_enrollment_dataloader, device)
-        rank_1_acc, rank_5_acc = evaluate(enrolled, model.feature_extract_avg_pool, cv_test_dataloader, device)
+        enrolled = enroll_identities(feature_extract_func, cv_enrollment_dataloader, device)
+        rank_1_acc, rank_5_acc, rank_n_acc = evaluate(enrolled, feature_extract_func, cv_test_dataloader, device)
         rank_1_accuracies.append(rank_1_acc)
         rank_5_accuracies.append(rank_5_acc)
 
-    print(f"mean CV rank 1 accuracy: {np.mean(rank_1_accuracies)}, mean CV rank 5 accuracy: {np.mean(rank_5_accuracies)}")
+    return np.mean(rank_1_accuracies), np.std(rank_1_accuracies), np.mean(rank_5_accuracies), np.std(rank_5_accuracies)
+
+
+if __name__ == '__main__':
+
+
+    print("Loading model...")
+    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    # model_name = "densenet201"
+
+    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    model_name = "resnet101"
+
+    data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked"
+    batch_size = 196
+
+
+    model, input_size = get_model(model_name, checkpoint_path)
+
+    device = torch.device('cuda')
+    model.to(device)
+    model.eval()
+
+    rank_1_accuracy, rank_1_accuracy_std, rank_5_accuracy, rank_5_accuracy_std = cross_validate(data_path, model.feature_extract_avg_pool)
+
+    print(f"mean CV rank 1 accuracy: {rank_1_accuracy}, mean CV rank 5 accuracy: {rank_5_accuracy}")

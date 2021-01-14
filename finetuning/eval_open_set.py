@@ -82,10 +82,10 @@ def enroll_identities(feature_extract_func, dataloader, device):
 
     return enrolled
 
-def evaluate(enrolled, feature_extract_func, dataloader, device):
+def evaluate(enrolled, feature_extract_func, dataloader, device, rank_n=50):
     total = 0
-    rank_1_correct = 0
-    rank_5_correct = 0
+    rank_n_correct = np.zeros(rank_n)
+
     with torch.no_grad():
         for input, labels in dataloader:
             inputs = input.to(device)
@@ -99,24 +99,18 @@ def evaluate(enrolled, feature_extract_func, dataloader, device):
                     cosine_similarities = np.matmul(enrolled[key], pred_norm)
                     similarities_id[key] = np.max(cosine_similarities)
 
-                # Check for rank 1 accuracy
-                recognized_key = max(similarities_id, key=similarities_id.get)
-                if label == recognized_key:
-                    rank_1_correct += 1
+                # Check for rank n accuracy
+                counter = Counter(similarities_id)
+                for i in range(1, rank_n + 1):
+                    rank_n_vals = list(dict(counter.most_common(i)).keys())
+                    rank_n_correct[i-1] += 1 if label in rank_n_vals else 0
+                total +=1
 
-                # Check for rank 5 accuracy
-                top_5_labels = list(dict(Counter(similarities_id).most_common(5)).keys())
-                if label in top_5_labels:
-                    rank_5_correct += 1
-
-                total += 1
-
-                # print(f"Ground truth label: {label}, prediction: {recognized_key}")
-
-    rank_1_accuracy = rank_1_correct / total
-    rank_5_accuracy = rank_5_correct / total
+    rank_n_correct /= total
+    rank_1_accuracy =  rank_n_correct[0]
+    rank_5_accuracy = rank_n_correct[4]
     print(f"Rank 1 accuracy: {rank_1_accuracy}, rank 5 accuracy: {rank_5_accuracy}")
-    return rank_1_accuracy, rank_5_accuracy
+    return rank_1_accuracy, rank_5_accuracy, rank_n_correct
 
 if __name__ == '__main__':
 
@@ -146,4 +140,4 @@ if __name__ == '__main__':
     enrolled = enroll_identities(model.feature_extract_avg_pool, enrollment_dataloader, device)
 
     print("Running recognition evaluation...")
-    evaluate(enrolled, model.feature_extract_avg_pool, test_dataloader, device)
+    rank_1_accuracy, rank_5_accuracy, rank_n_accuracy = evaluate(enrolled, model.feature_extract_avg_pool, test_dataloader, device)
