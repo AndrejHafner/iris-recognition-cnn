@@ -328,7 +328,6 @@ if __name__ == '__main__':
 
     # Detect if we have a GPU available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
     # Send the model to GPU
     model = model.to(device)
 

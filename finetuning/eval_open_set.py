@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.preprocessing import normalize
 from torch import nn
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
@@ -57,7 +59,7 @@ def get_dataloader(data_path, input_size, batch_size=32):
     ])
 
     dataset = datasets.ImageFolder(data_path, transform)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
 if __name__ == '__main__':
 
@@ -69,9 +71,9 @@ if __name__ == '__main__':
 
     checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
     model_name = "resnet101"
-    enrollment_data_path = "./"
-    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_stacked/test"
-    batch_size = 1
+    enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
+    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
+    batch_size = 128
 
     model, input_size = get_model(model_name, checkpoint_path)
 
@@ -85,14 +87,45 @@ if __name__ == '__main__':
 
     print("Enrolling identities...")
 
-    enrolled = defaultdict(list)
+    enrolled = {}
     with torch.no_grad():
         for input, labels in enrollment_dataloader:
             inputs = input.to(device)
-            prediction = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
-            for idx, label in labels:
-                enrolled[label].append(prediction[idx,:])
-            e = 0
+            labels = labels.cpu().detach().numpy()
 
+            # Extract the features using the CNN
+            predictions = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
+
+            # Create a matrix for each users, where a row represents a feature vector extracted from the enrollment image and
+            # normalize the matrix bx rows (to reduce the amount of computation in the recognition phase)
+            # Results is a dictionary, where a key is a specific identity with the entry containing a matrix where a row is x / ||x||,
+            # where x is a feature vector for a given image
+            unique_labels = np.unique(labels)
+            for i in unique_labels:
+                user_features = predictions[labels == i,:]
+                if i in enrolled:
+                    enrolled[i] = np.vstack((enrolled[i], normalize(user_features, axis=0, norm='l2')))
+                else:
+                    enrolled[i] = normalize(user_features, axis=0, norm='l2')
 
     print("Recognizing...")
+
+    with torch.no_grad():
+        for input, labels in test_dataloader:
+            inputs = input.to(device)
+            labels = labels.cpu().detach().numpy()
+            predictions = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
+            for idx, label in enumerate(labels):
+                prediction = predictions[idx,:].reshape(1,-1)
+                similarities_id = {}
+                for key in enrolled.keys():
+                    similarities = []
+                    for entry in enrolled[key]:
+                        entry = entry.reshape(1,-1)
+                        similarities.append(cosine_similarity(prediction, entry))
+                    similarities_id[key] = max(similarities)[0]
+
+                recognized_key = max(similarities_id, key=similarities_id.get)
+                print(f"Ground truth label: {label}, prediction: {recognized_key}")
+            break
+
