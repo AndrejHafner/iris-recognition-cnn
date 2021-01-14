@@ -88,18 +88,18 @@ def cross_validate(data_path, feature_extract_func, folds=5, random_seed=42):
         rank_n_accuracies.append(rank_n_acc)
 
     rank_n_accuracies = np.vstack(rank_n_accuracies)
-    return np.mean(rank_1_accuracies), np.std(rank_1_accuracies), np.mean(rank_5_accuracies), np.std(rank_5_accuracies), np.mean(rank_n_accuracies, axis=0)
+    return np.mean(rank_1_accuracies), np.std(rank_1_accuracies), np.mean(rank_5_accuracies), np.std(rank_5_accuracies), np.mean(rank_n_accuracies, axis=0), rank_n_accuracies
 
 
 if __name__ == '__main__':
 
 
     print("Loading model...")
-    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    # model_name = "densenet201"
+    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    model_name = "densenet201"
 
-    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
-    model_name = "resnet101"
+    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    # model_name = "resnet101"
 
     data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked"
     batch_size = 128
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     model.to(device)
     model.eval()
 
-    rank_1_accuracy, rank_1_accuracy_std, rank_5_accuracy, rank_5_accuracy_std, rank_n_accuracies_mean = cross_validate(data_path, model.feature_extract_avg_pool)
+    rank_1_accuracy, rank_1_accuracy_std, rank_5_accuracy, rank_5_accuracy_std, rank_n_accuracies_mean, rank_n_accuracies = cross_validate(data_path, model.feature_extract_avg_pool)
 
     print(f"mean CV rank 1 accuracy: {rank_1_accuracy}, mean CV rank 5 accuracy: {rank_5_accuracy}")
 
@@ -120,7 +120,8 @@ if __name__ == '__main__':
         "rank_1_acc_std": rank_1_accuracy_std,
         "rank_5_acc": rank_5_accuracy,
         "rank_5_acc_std": rank_5_accuracy_std,
-        "rank_n_accuracies_mean": list(rank_n_accuracies_mean)
+        "rank_n_accuracies_mean": list(rank_n_accuracies_mean),
+        "rank_n_accuracies_stacked": rank_n_accuracies.tolist()
     }
 
     pathlib.Path("./results").mkdir(parents=True, exist_ok=True)
