@@ -61,40 +61,15 @@ def get_dataloader(data_path, input_size, batch_size=32):
     dataset = datasets.ImageFolder(data_path, transform)
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-if __name__ == '__main__':
-
-
-    print("Loading model...")
-    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    model_name = "densenet201"
-
-    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
-    # model_name = "resnet101"
-
-    enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
-    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
-    batch_size = 256
-
-    model, input_size = get_model(model_name, checkpoint_path)
-
-    device = torch.device('cuda')
-    model.to(device)
-    model.eval()
-
-
-    enrollment_dataloader = get_dataloader(test_data_path, input_size, batch_size=batch_size)
-    test_dataloader = get_dataloader(enrollment_data_path, input_size, batch_size=batch_size)
-
-    print("Enrolling identities...")
-
+def enroll_identities(feature_extract_func, dataloader, device):
     enrolled = {}
     with torch.no_grad():
-        for input, labels in enrollment_dataloader:
+        for input, labels in dataloader:
             inputs = input.to(device)
             labels = labels.cpu().detach().numpy()
 
             # Extract the features using the CNN
-            predictions = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
+            predictions = feature_extract_func(inputs).cpu().detach().numpy()
 
             # Create a matrix for each users, where a row represents a feature vector extracted from the enrollment image and
             # normalize the matrix bx rows (to reduce the amount of computation in the recognition phase)
@@ -102,22 +77,24 @@ if __name__ == '__main__':
             # where x is a feature vector for a given image
             unique_labels = np.unique(labels)
             for i in unique_labels:
-                user_features = predictions[labels == i,:]
+                user_features = predictions[labels == i, :]
                 if i in enrolled:
                     enrolled[i] = np.vstack((enrolled[i], normalize(user_features, axis=1, norm='l2')))
                 else:
                     enrolled[i] = normalize(user_features, axis=1, norm='l2')
-    print("Recognizing...")
 
+    return enrolled
+
+def evaluate(enrolled, feature_extract_func, dataloader, device):
     total = 0
     correct = 0
     with torch.no_grad():
-        for input, labels in test_dataloader:
+        for input, labels in dataloader:
             inputs = input.to(device)
             labels = labels.cpu().detach().numpy()
-            predictions = model.feature_extract_avg_pool(inputs).cpu().detach().numpy()
+            predictions = feature_extract_func(inputs).cpu().detach().numpy()
             for idx, label in enumerate(labels):
-                pred = predictions[idx,:].reshape(-1,1)
+                pred = predictions[idx, :].reshape(-1, 1)
                 pred_norm = normalize(pred, axis=0, norm="l2")
                 similarities_id = {}
                 for key in enrolled.keys():
@@ -131,3 +108,33 @@ if __name__ == '__main__':
                 print(f"Ground truth label: {label}, prediction: {recognized_key}")
 
     print(f"Accuracy: {correct / total}")
+
+if __name__ == '__main__':
+
+
+    print("Loading model...")
+    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    model_name = "densenet201"
+
+    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    # model_name = "resnet101"
+
+    enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
+    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
+    batch_size = 196
+
+    model, input_size = get_model(model_name, checkpoint_path)
+
+    device = torch.device('cuda')
+    model.to(device)
+    model.eval()
+
+
+    enrollment_dataloader = get_dataloader(enrollment_data_path, input_size, batch_size=batch_size)
+    test_dataloader = get_dataloader(test_data_path, input_size, batch_size=batch_size)
+
+    print("Enrolling identities...")
+    enrolled = enroll_identities(model.feature_extract_avg_pool, enrollment_dataloader, device)
+
+    print("Running recognition evaluation...")
+    evaluate(enrolled, model.feature_extract_avg_pool, test_dataloader, device)
