@@ -11,7 +11,7 @@ from tqdm import tqdm
 from common.Enhancement import ImageEnhancement
 from common.Normalization import IrisNormalization
 from common.Segmentation import IrisLocalization
-from utils.utils import casia_enrollment_split, parse_casia_interval_filename
+from utils.utils import casia_train_val_test_split, parse_casia_interval_filename
 
 dir = "../data/CASIA-Iris-Interval"
 target_dir = "../data/CASIA_interval_norm_internal_512_64_e"
@@ -40,7 +40,7 @@ def pool_func_test(file_path):
 
 if __name__ == '__main__':
 
-    train_dict, test_dict = casia_enrollment_split(dir, parse_func=parse_casia_interval_filename)
+    train_dict, test_dict = casia_train_val_test_split(dir, parse_func=parse_casia_interval_filename)
 
     train = list(itertools.chain.from_iterable(train_dict.values()))
     test = list(itertools.chain.from_iterable(test_dict.values()))

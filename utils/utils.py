@@ -45,9 +45,10 @@ def get_files_walk(dir):
             yield os.path.join(dirpath, file)
 
 
-def casia_enrollment_split(dir, parse_func=parse_casia_interval_filename, split = 0.7, random_seed = 42):
+def casia_train_val_test_split(dir, parse_func=parse_casia_interval_filename, from_=0, to=1500, random_seed = 42):
     identities = defaultdict(list)
-    enrollment = defaultdict(list)
+    train = defaultdict(list)
+    validation = defaultdict(list)
     test = defaultdict(list)
 
     for file in get_files_walk(dir):
@@ -55,17 +56,19 @@ def casia_enrollment_split(dir, parse_func=parse_casia_interval_filename, split 
         identifier, side, index = parse_func(file)
         identities[(identifier, side)].append(file)
 
-    random.seed(random_seed)
     # Filter out identities with only a single picture of iris -> can't do recognition with only a single image per class??
-    identities_filtered = { key : random.sample(sorted(identities[key], key=lambda x: x[0]), len(identities[key])) for key in identities.keys() if len(identities[key]) >= 2 }
-
-    # Split identites to enrollment and testing set
+    identities_filtered = { key : sorted(identities[key], key=lambda x: x[0]) for key in list(identities.keys())[from_:to] if len(identities[key]) >= 2 }
+    # Split identities
     for key in identities_filtered.keys():
-        split_idx = round(len(identities_filtered[key]) * split)
-        enrollment[key] = identities_filtered[key][:split_idx]
-        test[key] = identities_filtered[key][split_idx:]
+        test[key].append(identities_filtered[key][1]) # add the second picture
+        validation[key].append(identities_filtered[key][4])
+        validation[key].append(identities_filtered[key][6])
+        train[key] += [identities_filtered[key][0],
+                       identities_filtered[key][2],
+                       identities_filtered[key][3],
+                       identities_filtered[key][5]] + identities_filtered[key][7:]
 
-    return enrollment, test
+    return train, validation, test
 
 def load_train_test(dir, filename_parse_func=parse_casia_thousand_filename):
     train_files = [os.path.join(dir, "train", file) for file in os.listdir(os.path.join(dir, "train")) if "_mask" not in file]

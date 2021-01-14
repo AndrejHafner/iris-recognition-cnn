@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
     test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
-    batch_size = 128
+    batch_size = 256
 
     model, input_size = get_model(model_name, checkpoint_path)
 
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     model.eval()
 
 
-    enrollment_dataloader = get_dataloader(enrollment_data_path, input_size, batch_size=batch_size)
-    test_dataloader = get_dataloader(test_data_path, input_size, batch_size=batch_size)
+    enrollment_dataloader = get_dataloader(test_data_path, input_size, batch_size=batch_size)
+    test_dataloader = get_dataloader(enrollment_data_path, input_size, batch_size=batch_size)
 
     print("Enrolling identities...")
 
