@@ -1,15 +1,14 @@
+import json
+import pathlib
 import random
-from collections import defaultdict
-
 import torch
 import numpy as np
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets.folder import default_loader
-
+from collections import defaultdict
 from finetuning.eval_open_set import get_model, enroll_identities, evaluate
 from torchvision import transforms
-
 from utils.utils import get_files_walk, parse_casia_thousand_filename
 
 class IrisDataset(Dataset):
@@ -63,6 +62,7 @@ def cross_validate(data_path, feature_extract_func, folds=5, random_seed=42):
     test_images_cnt = int(images_per_identity / folds)
     rank_1_accuracies = []
     rank_5_accuracies = []
+    rank_n_accuracies = []
 
     print(f"Starting cross validation, folds: {folds}")
     for fold in range(folds):
@@ -85,8 +85,10 @@ def cross_validate(data_path, feature_extract_func, folds=5, random_seed=42):
         rank_1_acc, rank_5_acc, rank_n_acc = evaluate(enrolled, feature_extract_func, cv_test_dataloader, device)
         rank_1_accuracies.append(rank_1_acc)
         rank_5_accuracies.append(rank_5_acc)
+        rank_n_accuracies.append(rank_n_acc)
 
-    return np.mean(rank_1_accuracies), np.std(rank_1_accuracies), np.mean(rank_5_accuracies), np.std(rank_5_accuracies)
+    rank_n_accuracies = np.vstack(rank_n_accuracies)
+    return np.mean(rank_1_accuracies), np.std(rank_1_accuracies), np.mean(rank_5_accuracies), np.std(rank_5_accuracies), np.mean(rank_n_accuracies, axis=0)
 
 
 if __name__ == '__main__':
@@ -100,7 +102,7 @@ if __name__ == '__main__':
     model_name = "resnet101"
 
     data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked"
-    batch_size = 196
+    batch_size = 128
 
 
     model, input_size = get_model(model_name, checkpoint_path)
@@ -109,6 +111,19 @@ if __name__ == '__main__':
     model.to(device)
     model.eval()
 
-    rank_1_accuracy, rank_1_accuracy_std, rank_5_accuracy, rank_5_accuracy_std = cross_validate(data_path, model.feature_extract_avg_pool)
+    rank_1_accuracy, rank_1_accuracy_std, rank_5_accuracy, rank_5_accuracy_std, rank_n_accuracies_mean = cross_validate(data_path, model.feature_extract_avg_pool)
 
     print(f"mean CV rank 1 accuracy: {rank_1_accuracy}, mean CV rank 5 accuracy: {rank_5_accuracy}")
+
+    results = {
+        "rank_1_acc": rank_1_accuracy,
+        "rank_1_acc_std": rank_1_accuracy_std,
+        "rank_5_acc": rank_5_accuracy,
+        "rank_5_acc_std": rank_5_accuracy_std,
+        "rank_n_accuracies_mean": list(rank_n_accuracies_mean)
+    }
+
+    pathlib.Path("./results").mkdir(parents=True, exist_ok=True)
+
+    with open(f'./results/{model_name}_results_cv.json', 'w') as f:
+        json.dump(results, f)

@@ -1,3 +1,5 @@
+import json
+import pathlib
 from collections import Counter
 
 import torch
@@ -116,11 +118,11 @@ if __name__ == '__main__':
 
 
     print("Loading model...")
-    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    model_name = "densenet201"
+    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    # model_name = "densenet201"
 
-    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
-    # model_name = "resnet101"
+    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    model_name = "resnet101"
 
     enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
     test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
@@ -141,3 +143,14 @@ if __name__ == '__main__':
 
     print("Running recognition evaluation...")
     rank_1_accuracy, rank_5_accuracy, rank_n_accuracy = evaluate(enrolled, model.feature_extract_avg_pool, test_dataloader, device)
+
+    results = {
+        "rank_1_acc": rank_1_accuracy,
+        "rank_5_acc": rank_5_accuracy,
+        "rank_n_accuracies": list(rank_n_accuracy)
+    }
+
+    pathlib.Path("./results").mkdir(parents=True, exist_ok=True)
+
+    with open(f'./results/{model_name}_results.json', 'w') as f:
+        json.dump(results, f)

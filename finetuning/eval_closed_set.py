@@ -1,3 +1,6 @@
+import json
+import pathlib
+
 from torch import nn
 from torch.nn.functional import softmax
 from torch.utils.data import DataLoader
@@ -47,7 +50,6 @@ def get_model(model_name, checkpoint_path, num_classes=1500):
 def get_dataloader(data_path, input_size, batch_size=32):
 
     transform = transforms.Compose([
-        # transforms.Pad((0, (192) // 2)),
         transforms.Resize(input_size),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
@@ -60,11 +62,15 @@ def get_dataloader(data_path, input_size, batch_size=32):
 if __name__ == '__main__':
 
 
-    print("Loading model...")
-    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
-    model_name = "densenet201"
+    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    # model_name = "densenet201"
+
+    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    model_name = "resnet101"
+
     test_data_path = "./CASIA_thousand_norm_256_64_e_nn_stacked/test"
 
+    print("Loading model...")
     model, input_size = get_model(model_name, checkpoint_path)
 
     device = torch.device('cuda')
@@ -74,20 +80,37 @@ if __name__ == '__main__':
     dataloader = get_dataloader(test_data_path, input_size)
 
     print("Running evaluation....")
-
+    rank_n = 50
     total = 0
-    correct = 0
+    rank_n_correct = np.zeros(rank_n)
     with torch.no_grad():
-        for input, label in dataloader:
-            inputs = input.to(device)
-            prediction = model(inputs).cpu()
-            predicted_label = torch.argmax(softmax(prediction, dim=1), dim=1).detach().numpy()
-            label_np = label.detach().numpy()
+        for inputs, labels in dataloader:
+            input = inputs.to(device)
+            prediction = model(input).cpu()
 
-            for i in range(label_np.size):
-                if label_np[i] == predicted_label[i]:
-                    correct += 1
-                total += 1
+            labels_np = labels.detach().numpy()
+            labels_prob = softmax(prediction, dim=1).detach().numpy()
+            rank_n_pred = (-labels_prob).argsort(axis=-1)[:, :rank_n]
+            for i in range(labels_np.size):
+                rank_n_pred_ith_label = list(rank_n_pred[i,:])
+                total +=1
+                for rank in range(rank_n):
+                    rank_n_correct[rank] += 1 if labels_np[i] in rank_n_pred_ith_label[:rank+1] else 0
 
+    rank_n_correct /= total
 
-    print(f"Classification accuracy: {round(correct/total, 3)}")
+    rank_1_accuracy = rank_n_correct[0]
+    rank_5_accuracy = rank_n_correct[4]
+
+    print(f"Rank-1 accuracy: {rank_1_accuracy}, rank-5 accuracy: {rank_5_accuracy}")
+
+    results = {
+        "rank_1_acc": rank_1_accuracy,
+        "rank_5_acc": rank_5_accuracy,
+        "rank_n_accuracies": list(rank_n_correct)
+    }
+
+    pathlib.Path("./results").mkdir(parents=True, exist_ok=True)
+
+    with open(f'./results/{model_name}_results_closed_set.json', 'w') as f:
+        json.dump(results, f)
