@@ -1,13 +1,9 @@
-from collections import defaultdict
-
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
-from torch import nn
-from torch.nn.functional import softmax
-from torch.utils.data import DataLoader
 import torch
-from torchvision import datasets, models, transforms
 import numpy as np
+
+from sklearn.preprocessing import normalize
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 
 from models import DenseNet161Iris, ResNet101Iris, ResNet152Iris, InceptionV3Iris, DenseNet201Iris
 
@@ -105,9 +101,10 @@ def evaluate(enrolled, feature_extract_func, dataloader, device):
                 total += 1
                 if label == recognized_key:
                     correct += 1
-                print(f"Ground truth label: {label}, prediction: {recognized_key}")
+                # print(f"Ground truth label: {label}, prediction: {recognized_key}")
 
     print(f"Accuracy: {correct / total}")
+    return correct / total
 
 if __name__ == '__main__':
 
