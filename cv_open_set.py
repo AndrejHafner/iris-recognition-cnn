@@ -7,7 +7,7 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from torchvision.datasets.folder import default_loader
 from collections import defaultdict
-from finetuning.eval_open_set import get_model, enroll_identities, evaluate
+from eval_open_set import get_model, enroll_identities, evaluate
 from torchvision import transforms
 from utils.utils import get_files_walk, parse_casia_thousand_filename
 
@@ -95,13 +95,13 @@ if __name__ == '__main__':
 
 
     print("Loading model...")
-    checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    checkpoint_path = "./models/densenet201_e_80_lr_0_0001_best.pth"
     model_name = "densenet201"
 
-    # checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    # checkpoint_path = "./models/resnet101_e_80_lr_2e-05_best.pth"
     # model_name = "resnet101"
 
-    data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked"
+    data_path = "./data/CASIA_thousand_norm_256_64_e_nn_open_set_stacked"
     batch_size = 128
 
 

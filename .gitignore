@@ -3,10 +3,4 @@ data
 __pycache__/
 *.pyc
 templates
-finetuning/CASIA_thousand_norm_256_64_e_nn
-finetuning/CASIA_thousand_norm_256_64_e_nn_stacked
-finetuning/CASIA_thousand_norm_256_64_e_nn_open_set
-finetuning/CASIA_thousand_norm_256_64_e_nn_open_set_stacked
-finetuning/densenet_models
-finetuning/resnet_models
-
+models

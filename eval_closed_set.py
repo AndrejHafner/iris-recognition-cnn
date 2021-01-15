@@ -62,13 +62,13 @@ def get_dataloader(data_path, input_size, batch_size=32):
 if __name__ == '__main__':
 
 
-    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    # checkpoint_path = "./models/densenet201_e_80_lr_0_0001_best.pth"
     # model_name = "densenet201"
 
-    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    checkpoint_path = "./models/resnet101_e_80_lr_2e-05_best.pth"
     model_name = "resnet101"
 
-    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_stacked/test"
+    test_data_path = "./data/CASIA_thousand_norm_256_64_e_nn_stacked/test"
 
     print("Loading model...")
     model, input_size = get_model(model_name, checkpoint_path)

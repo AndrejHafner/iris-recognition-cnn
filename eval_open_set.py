@@ -118,14 +118,14 @@ if __name__ == '__main__':
 
 
     print("Loading model...")
-    # checkpoint_path = "./densenet_models/densenet201_e_80_lr_0_0001_best.pth"
+    # checkpoint_path = "./models/densenet201_e_80_lr_0_0001_best.pth"
     # model_name = "densenet201"
 
-    checkpoint_path = "./resnet_models/resnet101_e_80_lr_2e-05_best.pth"
+    checkpoint_path = "./models/resnet101_e_80_lr_2e-05_best.pth"
     model_name = "resnet101"
 
-    enrollment_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
-    test_data_path = "./CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
+    enrollment_data_path = "./data/CASIA_thousand_norm_256_64_e_nn_open_set_stacked/enrollment"
+    test_data_path = "./data/CASIA_thousand_norm_256_64_e_nn_open_set_stacked/test"
     batch_size = 196
 
     model, input_size = get_model(model_name, checkpoint_path)

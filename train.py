@@ -13,7 +13,7 @@ import copy
 from models import EfficientNet
 
 
-parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--data', metavar='DIR',default="./data_256_stacked",
                     help='path to dataset')
 parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet101',
