@@ -7,7 +7,7 @@ Install Anaconda environment from the `environment.yml` file.
 
 ## Files
 
-`train.py` - model training for closed set recognition (check argparser for arguments)
+`train.py` - model training for closed set recognition (check argparser for arguments)  
 `eval_closed_set.py` - closed set evaluation script  
 `eval_open_set.py` - open set evaluation script  
 `cv_open_set.py` - open set cross validation script  
