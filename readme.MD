@@ -1,29 +1,17 @@
-# Iris recognition with CNN for feature extraction
-
-### TODO:
-- cite the authors of the original pipeline
-- try normalizing pictures with the mean and std of the CASIA DB, not imagenet params
+# Iris recognition using CNNs for feature extraction
 
 
-### Casia-Iris-Interval structure
-The images of CASIA-Iris-Interval are stored as:  
-$root path$/CASIA-Iris-Interval/YYY/E/S1YYYENN.jpg  
-YYY: the unique identifier of the subject in the subset  
-E: ‘L’ denotes left eye and ‘R’ denotes right eye  
-NN: the index of the image in the class   
+## Requirements
 
+Install Anaconda environment from the `environment.yml` file.
 
-### Casia-Iris-Thousand
-- 25 non-normalized in train images and 9 in test - with enhancement
+## Files
 
+`train.py` - model training for closed set recognition (check argparser for arguments)
+`eval_closed_set.py` - closed set evaluation script  
+`eval_open_set.py` - open set evaluation script  
+`cv_open_set.py` - open set cross validation script  
 
-### ResNet50d
-- 86% acc - first 5 layers + global pool + no mask
-
-### EfficientNet B3a
-- 87% acc - first 4 layers + no global pool + no mask
-
-### Credits
-https://github.com/Linchunhui/Iris_Recognition  
-https://github.com/ngoclamvt123/usit-v2.2.0
-
+For training and evaluation you need preprocessed images. Scripts can be found in `/scripts` directory.
+Pretrained models can be downloaded [here](https://drive.google.com/file/d/1pf-X13Dpsj-Q8p5Xzl0-uCoB1IeFmYD7/view?usp=sharing) and preprocessed images for open and closed set recognition [here]().
+Models should be unzipped into `/models` directory and image folders to `/data` directory. Both are in .gitignore due to filesize issues.
